@@ -1,6 +1,7 @@
 
 https://console.cloud.google.com/bigquery?sq=969881765521:3ad27e2574f744c6873bb225555e5628
 
+QUERY 1--------------------------------------------------------------------------------------------------------------------------------------
 select ef.city,bf.breakfast_basket,ef.efood_basket, bf.breakfast_freq, ef.efood_freq, efood_prc.prc, br_prc.prc
 /* Total efood orders - orders>1000 */
 from (select city, count(order_id) as orders_count , 
@@ -30,7 +31,7 @@ where ef.orders_count>1000 and bf.orders_count>1000 and efood_prc.orders_count>1
 order by bf.orders_count
 limit 5;
 
-
+QUERY 2---------------------------------------------------------------------------------------------------
 select users.user_id,users.city, users.user_orders/cities.city_orders as orders_share from (select user_id,city,count(order_id) as user_orders,rank() over(partition by city order by count(order_id) DESC ) as Rank
 from `efood2022-377811.main_assessment.orders`
 group by user_id,city) users
