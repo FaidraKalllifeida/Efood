@@ -1,0 +1,41 @@
+
+https://console.cloud.google.com/bigquery?sq=969881765521:3ad27e2574f744c6873bb225555e5628
+
+select ef.city,bf.breakfast_basket,ef.efood_basket, bf.breakfast_freq, ef.efood_freq, efood_prc.prc, br_prc.prc
+/* Total efood orders - orders>1000 */
+from (select city, count(order_id) as orders_count , 
+sum(amount)/count(order_id) as efood_basket, 
+count(order_id)/count(distinct user_id) as efood_freq
+from `efood2022-377811.main_assessment.orders` group by city) as ef
+/* Total breakfast orders - orders>1000 */
+left join (select city, count(order_id) as orders_count ,
+sum(amount)/count(order_id) as breakfast_basket, 
+count(order_id)/count(distinct user_id) as breakfast_freq
+from `efood2022-377811.main_assessment.orders` 
+where cuisine='Breakfast'
+group by city) as bf on bf.city=ef.city
+/* Efood %Users that exceed 3 orders */
+left join (select city,count(distinct user_id)/count(user_id) as prc, count(order_id) as orders_count from `efood2022-377811.main_assessment.orders` 
+group by city
+having count(distinct user_id)>3
+) as efood_prc on efood_prc.city=ef.city
+/* Breakfast (Users of Frequency >3) / Users */
+left join (select city, (count(distinct user_id)/count(user_id)) as prc, count(order_id) as orders_count from `efood2022-377811.main_assessment.orders`
+where cuisine = 'Breakfast' 
+group by city
+having count(distinct user_id)>3
+) as br_prc on br_prc.city=ef.city
+/* Orders >1000 */
+where ef.orders_count>1000 and bf.orders_count>1000 and efood_prc.orders_count>1000 and br_prc.orders_count>1000
+order by bf.orders_count
+limit 5;
+
+
+select users.user_id,users.city, users.user_orders/cities.city_orders as orders_share from (select user_id,city,count(order_id) as user_orders,rank() over(partition by city order by count(order_id) DESC ) as Rank
+from `efood2022-377811.main_assessment.orders`
+group by user_id,city) users
+left join (select city, count(order_id) as city_orders from `efood2022-377811.main_assessment.orders`
+group by city) cities on cities.city=users.city
+where Rank <=10
+order by users.city,users.user_orders DESC
+;
